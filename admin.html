@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin | Spatialist</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="top dark-top">
+  <div class="container nav">
+    <a class="brand" href="index.html#home">
+      <img class="brand-logo" src="images/logo.png" alt="Spatialist logo">
+      <span class="brand-name">Spatialist</span>
+    </a>
+    <a class="menu pill" style="padding:8px 10px;" href="index.html#services">Back</a>
+  </div>
+</header>
+
+<main class="section snap" style="min-height:auto;padding:46px 0;">
+  <div class="container">
+    <div class="about-card" style="max-width:900px;margin:0 auto;">
+
+      <!-- LOGIN -->
+      <div id="loginBlock">
+        <h2 style="margin:0 0 10px;">Login</h2>
+
+        <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr;">
+          <input id="user" placeholder="Username" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <input id="pass" placeholder="Password" type="password" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+        </div>
+
+        <div style="margin-top:12px;">
+          <button class="more" id="loginBtn" style="max-width:220px;">Login <span class="arrow">→</span></button>
+        </div>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div id="adminPanel" style="display:none;">
+
+        <h2 style="margin:0 0 10px;">Add Project</h2>
+
+        <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr;">
+          <input id="pTitle" placeholder="Project title" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <select id="pCategory" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);">
+            <option>Tutor</option>
+            <option>GIS analysis</option>
+            <option>Town Planning</option>
+            <option>3D Visualizations</option>
+            <option>Branding</option>
+            <option>Art and Drawing</option>
+            <option>Land Surveying</option>
+            <option>Plot Sale</option>
+            <option>Consultacy</option>
+          </select>
+
+          <input id="pImage" placeholder="Image path or link (optional)" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <input id="pVideo" placeholder="Video link (optional)" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+
+          <input id="pLink" placeholder="Project link (optional)" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <input id="pDesc" placeholder="Short description" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+          <button class="more" id="addBtn" style="max-width:220px;">Add project <span class="arrow">→</span></button>
+          <button class="more" id="exportBtn" style="max-width:260px;">Export projects.json <span class="arrow">→</span></button>
+        </div>
+
+        <div id="plist" style="margin-top:14px;display:grid;gap:10px;"></div>
+
+        <hr style="border:none;border-top:1px solid rgba(1,16,37,.18);margin:20px 0;">
+
+        <h2 style="margin:0 0 10px;">Media Vault</h2>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="more" data-tab="docs" style="max-width:190px;">Documents <span class="arrow">→</span></button>
+          <button class="more" data-tab="images" style="max-width:190px;">Images <span class="arrow">→</span></button>
+          <button class="more" data-tab="videos" style="max-width:190px;">Videos <span class="arrow">→</span></button>
+        </div>
+
+        <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr;">
+          <input id="mTitle" placeholder="Media title" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <select id="mType" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);">
+            <option value="docs">Document</option>
+            <option value="images">Image</option>
+            <option value="videos">Video</option>
+          </select>
+          <input id="mUrl" placeholder="File link (Google Drive link is OK)" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+          <input id="mNote" placeholder="Note (optional)" style="padding:12px;border-radius:14px;border:1px solid rgba(1,16,37,.18);" />
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+          <button class="more" id="mAdd" style="max-width:220px;">Add media <span class="arrow">→</span></button>
+          <button class="more" id="mExport" style="max-width:260px;">Export media.json <span class="arrow">→</span></button>
+        </div>
+
+        <div id="mediaList" style="margin-top:14px;display:grid;gap:10px;"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const ADMIN_USER = "yohana";
+  const ADMIN_PASS = "1234"; // change this
+
+  const loginBlock = document.getElementById("loginBlock");
+  const adminPanel = document.getElementById("adminPanel");
+
+  let projects = [];
+  let media = [];
+  let activeTab = "docs";
+
+  function makeId(){
+    return "p_" + Math.random().toString(16).slice(2) + "_" + Date.now();
+  }
+
+  async function loadJson(file){
+    try{
+      const res = await fetch(file, { cache:"no-store" });
+      return res.ok ? await res.json() : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function downloadJson(name, data){
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function renderProjects(){
+    const list = document.getElementById("plist");
+    list.innerHTML = "";
+    projects.forEach((p, idx)=>{
+      const row = document.createElement("div");
+      row.className = "about-card";
+      row.style.padding = "12px";
+      row.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+          <div>
+            <div style="font-weight:900;">${p.title}</div>
+            <div style="opacity:.75;font-size:13px;">${p.category}</div>
+            <div style="opacity:.75;font-size:13px;">${p.description || ""}</div>
+            <div style="opacity:.75;font-size:13px;">id: ${p.id}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="more" data-edit="${idx}" style="max-width:120px;">Edit <span class="arrow">→</span></button>
+            <button class="more" data-del="${idx}" style="max-width:120px;">Delete <span class="arrow">→</span></button>
+          </div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function renderMedia(){
+    const list = document.getElementById("mediaList");
+    list.innerHTML = "";
+    const filtered = media.filter(m => m.type === activeTab);
+
+    filtered.forEach((m, idx)=>{
+      const row = document.createElement("div");
+      row.className = "about-card";
+      row.style.padding = "12px";
+      row.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+          <div>
+            <div style="font-weight:900;">${m.title}</div>
+            <div style="opacity:.75;font-size:13px;">${m.url}</div>
+            <div style="opacity:.75;font-size:13px;">${m.note || ""}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="more" data-mdel="${idx}" style="max-width:120px;">Delete <span class="arrow">→</span></button>
+          </div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", async ()=>{
+    const u = document.getElementById("user").value.trim();
+    const p = document.getElementById("pass").value.trim();
+    if(u === ADMIN_USER && p === ADMIN_PASS){
+      loginBlock.style.display = "none";
+      adminPanel.style.display = "block";
+
+      // make admin page ICE after login
+      document.body.classList.add("admin-ice");
+
+      projects = await loadJson("projects.json");
+      media = await loadJson("media.json");
+      renderProjects();
+      renderMedia();
+    }else{
+      alert("Wrong username or password.");
+    }
+  });
+
+  document.getElementById("addBtn").addEventListener("click", ()=>{
+    const obj = {
+      id: makeId(),
+      title: document.getElementById("pTitle").value.trim(),
+      category: document.getElementById("pCategory").value,
+      image: document.getElementById("pImage").value.trim(),
+      video: document.getElementById("pVideo").value.trim(),
+      link: document.getElementById("pLink").value.trim(),
+      description: document.getElementById("pDesc").value.trim()
+    };
+    if(!obj.title) return alert("Project title is required.");
+    projects.unshift(obj);
+    renderProjects();
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", ()=> downloadJson("projects.json", projects));
+  document.getElementById("mExport").addEventListener("click", ()=> downloadJson("media.json", media));
+
+  document.getElementById("mAdd").addEventListener("click", ()=>{
+    const t = document.getElementById("mType").value;
+    const obj = {
+      type: t,
+      title: document.getElementById("mTitle").value.trim(),
+      url: document.getElementById("mUrl").value.trim(),
+      note: document.getElementById("mNote").value.trim()
+    };
+    if(!obj.title || !obj.url) return alert("Media title and link are required.");
+    media.unshift(obj);
+    activeTab = t;
+    renderMedia();
+  });
+
+  document.addEventListener("click", (e)=>{
+    const tabBtn = e.target.closest("[data-tab]");
+    if(tabBtn){
+      activeTab = tabBtn.getAttribute("data-tab");
+      renderMedia();
+      return;
+    }
+
+    const del = e.target.closest("[data-del]");
+    if(del){
+      projects.splice(Number(del.getAttribute("data-del")), 1);
+      renderProjects();
+      return;
+    }
+
+    const edit = e.target.closest("[data-edit]");
+    if(edit){
+      const i = Number(edit.getAttribute("data-edit"));
+      const p = projects[i];
+      document.getElementById("pTitle").value = p.title || "";
+      document.getElementById("pCategory").value = p.category || "Tutor";
+      document.getElementById("pImage").value = p.image || "";
+      document.getElementById("pVideo").value = p.video || "";
+      document.getElementById("pLink").value = p.link || "";
+      document.getElementById("pDesc").value = p.description || "";
+      projects.splice(i, 1);
+      renderProjects();
+      return;
+    }
+
+    const mdel = e.target.closest("[data-mdel]");
+    if(mdel){
+      const idx = Number(mdel.getAttribute("data-mdel"));
+      const filtered = media.filter(m => m.type === activeTab);
+      const item = filtered[idx];
+      const realIndex = media.indexOf(item);
+      if(realIndex >= 0) media.splice(realIndex, 1);
+      renderMedia();
+    }
+  });
+</script>
+</body>
+</html>
